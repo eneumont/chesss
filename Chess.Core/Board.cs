@@ -1,5 +1,7 @@
 ﻿using Chess.Core.Pieces;
 using Newtonsoft.Json;
+using System.Collections;
+using System.Collections.Specialized;
 
 namespace Chess.Core
 {
@@ -9,8 +11,7 @@ namespace Chess.Core
         Stalemate
     }
 
-    public class Board
-    {
+    public class Board {
         #region delegates / events
 
         //event is called on main form constructor
@@ -55,17 +56,17 @@ namespace Chess.Core
         #region constructor
 
         // default constructor
-        public Board(int size, bool addDefaultPieces)
-        {
+        public Board(int size, bool addDefaultPieces) {
             _tiles = new Tile[size, size];
             Size = size;
             CreateTiles(size, size);
 
-            if (addDefaultPieces)
-            {
+            if (addDefaultPieces) {
                 AddDefaultPieces();
                 _blackKingLocation = new BoardLocation(0, 4);
                 _whiteKingLocation = new BoardLocation(7, 4);
+            } else {
+                Add960Pieces();
             }
         }
          
@@ -142,8 +143,107 @@ namespace Chess.Core
             }
         }
 
-        private void UpdateKingPosition(char color, int row, int col)
-        {
+        private void Add960Pieces() {
+			//loop through each tile in 2d array and add pieces to board tiles
+			for (int i = 0; i < 8; i++) {
+				for (int j = 0; j < 8; j++) {
+					if (i == 1)
+						_tiles[i, j].Piece = new Pawn('b', i, j); // adds 8 player black pawns to 2nd row
+					if (i == 6)
+						_tiles[i, j].Piece = new Pawn('w', i, j); // adds 8 white pawns to 7th row
+
+					// player 1's backrow
+					//if (i == 7) {
+					//	if (j == 0 || j == 7)
+					//		_tiles[i, j].Piece = new Rook('w', i, j); // adds both white rooks
+					//	if (j == 1 || j == 6)
+					//		_tiles[i, j].Piece = new Knight('w', i, j); // adds both white knights
+					//	if (j == 2 || j == 5)
+					//		_tiles[i, j].Piece = new Bishop('w', i, j); // adds both white bishops
+					//	if (j == 3)
+					//		_tiles[i, j].Piece = new Queen('w', i, j); // adds white queen
+					//	if (j == 4)
+					//		_tiles[i, j].Piece = new King('w', i, j); // adds white king
+					//}
+
+					// player 2's backrow
+					//if (i == 0) {
+					//	if (j == 0 || j == 7)
+					//		_tiles[i, j].Piece = new Rook('b', i, j); // adds both black rooks
+					//	if (j == 1 || j == 6)
+					//		_tiles[i, j].Piece = new Knight('b', i, j); // adds both black knights
+					//	if (j == 2 || j == 5)
+					//		_tiles[i, j].Piece = new Bishop('b', i, j); // adds both black bishops
+					//	if (j == 3)
+					//		_tiles[i, j].Piece = new Queen('b', i, j); // adds black queen
+					//	if (j == 4)
+					//		_tiles[i, j].Piece = new King('b', i, j); // adds black king
+					//}
+				}
+			}
+
+            backrows();
+        }
+
+        private void backrows() {
+			//place king
+			int king = new Random().Next(1, 7);
+			_tiles[7, king].Piece = new King('w', 7, king);
+			_tiles[0, king].Piece = new King('b', 0, king);
+			UpdateKingPosition('w', 7, king);
+			UpdateKingPosition('b', 0, king);
+            
+            //place rooks
+            int r1 = new Random().Next(0, king);
+			_tiles[7, r1].Piece = new Rook('w', 7, r1);
+			_tiles[0, r1].Piece = new Rook('b', 0, r1);
+
+			int r2 = new Random().Next(king + 1, 8);
+			_tiles[7, r2].Piece = new Rook('w', 7, r2);
+			_tiles[0, r2].Piece = new Rook('b', 0, r2);
+            
+            //place bishops
+            int b1 = new Random().Next(8);
+            while (b1 == r1 || b1 == r2 || b1 == king) {
+				b1 = new Random().Next(8);
+			}
+			_tiles[7, b1].Piece = new Bishop('w', 7, b1);
+			_tiles[0, b1].Piece = new Bishop('b', 0, b1);
+
+            int b2;
+            int[] ints = new int[4];
+            ints = (b1 % 2 == 0) ? new int[4] { 1, 3, 5, 7 } : new int[4] { 0, 2, 4, 6 };
+			b2 = ints[new Random().Next(ints.Length)];
+			while (b2 == r1 || b2 == r2 || b2 == king) {
+				b2 = ints[new Random().Next(ints.Length)];
+			}
+			_tiles[7, b2].Piece = new Bishop('w', 7, b2);
+			_tiles[0, b2].Piece = new Bishop('b', 0, b2);
+
+			//place knights and queen
+			int k1 = new Random().Next(8);
+            while (k1 == b1 || k1 == b2 || k1 == r1 || k1 == r2 || k1 == king) {
+				k1 = new Random().Next(8);
+			}
+			_tiles[7, k1].Piece = new Knight('w', 7, k1);
+			_tiles[0, k1].Piece = new Knight('b', 0, k1);
+
+			int k2 = new Random().Next(8);
+			while (k2 == b1 || k2 == b2 || k2 == r1 || k2 == r2 || k2 == king || k2 == k1) {
+				k2 = new Random().Next(8);
+			}
+			_tiles[7, k2].Piece = new Knight('w', 7, k2);
+			_tiles[0, k2].Piece = new Knight('b', 0, k2);
+
+			int q = new Random().Next(8);
+			while (q == b1 || q == b2 || q == r1 || q == r2 || q == king || q == k1 || q == k2) {
+				q = new Random().Next(8);
+			}
+			_tiles[7, q].Piece = new Queen('w', 7, q);
+			_tiles[0, q].Piece = new Queen('b', 0, q);
+		}
+
+        private void UpdateKingPosition(char color, int row, int col) {
             if (color == 'w')
                 _whiteKingLocation = new BoardLocation(row, col);
             else
@@ -215,6 +315,20 @@ namespace Chess.Core
             if (_gameOver) _gameOver = false;
             if (_kingInCheck != null) _kingInCheck = null;
 
+        }
+
+        public List<Tile> tilePositions(char color, char symbol) {
+            List<Tile> tiles = new List<Tile>();
+
+            foreach (Tile t in _tiles) {
+                if (!t.IsEmptySpace) {
+					if (t.Piece.Color.Equals(color) && t.Piece.Symbol.Equals(symbol)) {
+						tiles.Add(t);
+					}
+				}
+            }
+
+            return tiles;
         }
 
         #region add/get/remove pieces and tiles
